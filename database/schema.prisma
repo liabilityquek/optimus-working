@@ -1,0 +1,48 @@
+model profile {
+    id         String     @id @default(uuid())
+    updated_at DateTime   @updatedAt
+    full_name  String
+    avatar_url String?
+    chat       chats[]    @relation("ChatOwner")
+    messages   messages[]
+}
+
+model chats {
+    id                String     @id @default(uuid())
+    created_at        DateTime   @default(now())
+    title             String
+    owner             profile?   @relation(name: "ChatOwner", fields: [ownerId], references: [id])
+    ownerId           String
+    model             String
+    system_prompt     String
+    advanced_settings Json
+    history_type      String
+    messages          messages[] @relation("ChatMessages")
+}
+
+model messages {
+    id         String                       @id @default(uuid())
+    created_at DateTime                     @default(now())
+    content    String
+    role       String
+    chatId     String
+    chat       chats                        @relation(name: "ChatMessages", fields: [chatId], references: [id])
+    owner      profile                      @relation(fields: [ownerId], references: [id])
+    ownerId    String
+    token_size Int
+    embedding  Unsupported("vector(1536)")?
+
+    @@map("prisma_items")
+}
+
+datasource db {
+    provider   = "postgresql"
+    url        = env("DATABASE_URL")
+    directUrl  = env("DIRECT_URL")
+    extensions = [vector]
+}
+
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["postgresqlExtensions"]
+}
